@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
-import { BuyMeCoffee } from './BuyMeCoffee';
+// import { BuyMeCoffee } from './BuyMeCoffee';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -50,21 +50,19 @@ export default function TopBar() {
   };
 
   return (
-    <div className="w-full bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700">
+    <div className="w-full bg-neutral border-b border-gray-800">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
-        <Link href="/" className="text-md sm:text-lg font-medium text-text dark:text-text-dark flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="text-2xl">🎬</span>
-          <span className="font-sans">NextTemp</span>
+        <Link href="/" className="text-md sm:text-lg font-medium flex items-center hover:opacity-90 transition-opacity">
+          <span className="text-xl text-white font-bold">Contact<span className="gradient-text">Bench</span></span>
         </Link>
 
         <div className="flex items-center gap-4">
           {!user ? (
             <>
-              <BuyMeCoffee />
-              {/* Show login button for unauthenticated users */}
+              {/* Sign in button */}
               <Link
                 href="/login"
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors shadow-subtle hover:shadow-hover"
+                className="gradient-button px-5 py-2 text-sm font-medium shadow-subtle hover:shadow-hover"
               >
                 Sign in
               </Link>
@@ -79,39 +77,38 @@ export default function TopBar() {
               ) && (
                 <button
                   onClick={() => router.push('/profile')}
-                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
+                  className="hidden sm:block gradient-button px-5 py-2 text-sm font-medium shadow-subtle hover:shadow-hover"
                 >
                   View Subscription
                 </button>
               )}
-              <BuyMeCoffee />
 
               {!isLoadingSubscription && (
                 subscription || isInTrial
               ) && pathname !== '/dashboard' && (
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
+                  className="hidden sm:block gradient-button px-5 py-2 text-sm font-medium shadow-subtle hover:shadow-hover"
                 >
-                  {isInTrial ? "Start Free Trial" : "Start Building"}
+                  Dashboard
                 </button>
               )}
               
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 px-3 py-2 rounded-full transition-colors"
+                  className="flex items-center gap-2 hover:bg-neutral-darker px-3 py-2 rounded-full transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center text-primary dark:text-primary-light">
+                  <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold">
                     {user.email?.[0].toUpperCase()}
                   </div>
                 </button>
                 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-surface-light dark:bg-surface-dark rounded-lg shadow-hover py-1 z-[60] border border-gray-200 dark:border-gray-700">
+                  <div className="absolute right-0 mt-2 w-48 bg-neutral-dark rounded-lg shadow-hover py-1 z-[60] border border-gray-800">
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 text-sm text-text dark:text-text-dark hover:bg-neutral dark:hover:bg-neutral-dark"
+                      className="block px-4 py-2 text-sm text-white hover:bg-neutral-darker"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsDropdownOpen(false);
@@ -123,7 +120,7 @@ export default function TopBar() {
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-neutral dark:hover:bg-neutral-dark disabled:opacity-50"
+                      className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-neutral-darker disabled:opacity-50"
                     >
                       {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                     </button>

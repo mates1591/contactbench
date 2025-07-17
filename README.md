@@ -148,6 +148,37 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       - Subscribe to events: customer.subscription.*, checkout.session.*, invoice.*, payment_intent.*
       - Copy Signing Secret → STRIPE_WEBHOOK_SECRET
 
+7. Setting Up Stripe Payment Links for Contact Credits:
+   
+   a. Create credit packages in Stripe:
+      - Go to Stripe Dashboard > Products
+      - Create three products:
+        * Light Package ($19): 2,000 credits
+        * Pro Package ($39): 6,000 credits
+        * Ultra Package ($99): 20,000 credits
+   
+   b. Create payment links for each package:
+      - Go to Stripe Dashboard > Products > Select Product > Payment links
+      - For each product, create a payment link
+      - Configure each link:
+        * Set appropriate pricing (one-time purchase)
+        * Enable customer email collection
+        * Add custom fields (optional): client_reference_id (to store user ID)
+        * Set success URL to: your_url/profile?payment=success
+        * Set cancel URL to: your_url/pricing
+   
+   c. Update payment links in the code:
+      - Open `app/pricing/page.tsx` and `components/PricingSection.tsx`
+      - Update the `PAYMENT_LINKS` constant with your actual Stripe payment links:
+        ```typescript
+        const PAYMENT_LINKS = {
+          light: "https://buy.stripe.com/your-light-payment-link",
+          pro: "https://buy.stripe.com/your-pro-payment-link",
+          ultra: "https://buy.stripe.com/your-ultra-payment-link"
+        };
+        ```
+      - This approach guarantees the payment links are available at runtime with no dependency on environment variables
+
 8. Start the development server:
 ```bash
 npm run dev
@@ -184,6 +215,49 @@ yarn dev
 ├── public/               # Static assets
 └── styles/               # Global styles
 ```
+
+## 📱 Contact Credits System
+
+The application uses a credit-based system for generating B2B contact databases:
+
+### 🔑 Key Features
+
+- **Free Starting Credits**: New users receive 20 free credits upon registration.
+- **Credit Usage**: 1 credit = 1 contact record generation.
+- **Credit Packages**:
+  - Light Package: 2,000 credits for $19
+  - Pro Package: 6,000 credits for $39
+  - Ultra Package: 20,000 credits for $99
+- **Credit Management**: Users can view their available and used credits in the Profile page.
+- **Database Integration**: Credits are verified before database creation and deducted upon completion.
+
+### 💾 Database Tables
+
+The credits system uses two main tables:
+
+1. **user_contact_credits**:
+   - Tracks available and used credits per user
+   - Created automatically for new users with initial free credits
+   - Updated when users purchase packages
+
+2. **credit_purchases**:
+   - Records all credit package purchases
+   - Stores purchase details including package name, credits amount, and Stripe payment IDs
+
+### 🔄 Implementation Flow
+
+1. **Purchase Flow**:
+   - User selects a credit package on the Pricing page
+   - User is redirected to Stripe for payment
+   - Upon successful payment, Stripe webhook updates user's credits
+   - User is redirected to Profile page showing updated credit balance
+
+2. **Usage Flow**:
+   - When creating a database, the system checks if user has sufficient credits
+   - Upon database completion, credits are automatically deducted
+   - Credits usage is displayed on the Profile page
+
+The implementation leverages database triggers to handle credit management automatically, ensuring accurate tracking of credit balances and usage across the application.
 
 ## 🛠️ Built With
 
@@ -261,3 +335,122 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 ---
 
 Made with 🔥 by [ShenSeanChen](https://github.com/ShenSeanChen)
+
+## Database Generation Feature
+
+The application includes a custom integration with Outscraper's Google Maps API to allow users to create custom business databases:
+
+### Features
+
+- Create databases by specifying:
+  - Search query (e.g., "restaurants", "coffee shops")
+  - Location (e.g., "Manhattan, NY, USA")
+  - Result limits
+  - Language preferences
+  - Custom tags
+
+- Database Management
+  - View status (pending, processing, completed, failed)
+  - Export results as JSON
+  - Delete databases
+
+### Setting Up Outscraper
+
+1. Obtain an API key from [Outscraper](https://app.outscraper.com/)
+2. Add your API key to `.env.local`:
+   ```
+   NEXT_PUBLIC_OUTSCRAPER_API_KEY=your-api-key-here
+   ```
+
+### Database Schema
+
+The feature requires two database tables:
+- `user_databases`: Stores database metadata and status
+- `database_entries`: Stores actual data entries
+
+Run the SQL commands from `database_tables.sql` in Supabase SQL editor to set up the required tables.
+
+### How It Works
+
+1. User creates a database through the form
+2. System creates a record in `user_databases` with a "pending" status
+3. API request is sent to Outscraper asynchronously
+4. System polls for results regularly
+5. Once complete, data is stored in `database_entries` table
+6. User can export or delete the database from the dashboard
+
+# Contact Credits System
+
+The application uses a credit-based system for generating contacts through database creation. Here's how it works:
+
+## Credit System Overview
+
+- Users receive 20 free credits upon registration
+- Each credit allows for generating one contact record
+- Credits are deducted when a database search is completed
+- Additional credits can be purchased through the Profile page
+
+## Credit Packages
+
+Three credit packages are available for purchase:
+
+- **Light Package**: 2,000 credits for $19
+- **Pro Package**: 6,000 credits for $39
+- **Ultra Package**: 20,000 credits for $99
+
+## Technical Implementation
+
+The credit system is implemented using the following components:
+
+### Database Tables
+
+- `user_contact_credits`: Tracks available and used credits for each user
+- `credit_purchases`: Records all credit purchase transactions
+
+### Database Triggers
+
+- `on_auth_user_created`: Automatically creates a credit record with 20 free credits for new users
+- `check_credits_before_database`: Ensures users have enough credits before creating a database
+- `on_database_completion`: Deducts credits when a database search is completed
+
+### API Routes
+
+- `/api/webhook/stripe`: Handles Stripe webhook events to process payments and add credits
+
+### Integration with Database Generation
+
+When creating a database, the system:
+1. Checks if the user has enough credits
+2. Creates the database with "pending" status
+3. Initiates the Outscraper API call
+4. Deducts credits based on actual results when the search completes
+5. Updates the user's credit balance
+
+## Setting Up Stripe for Credits
+
+To configure the payment system:
+
+1. Create three products in Stripe dashboard for the different credit packages
+2. Create payment links for each package and get the "Buy Button" IDs
+3. Add the IDs to your `.env.local` file:
+   ```
+   NEXT_PUBLIC_STRIPE_LIGHT_BUTTON_ID=buy_btn_light_package_id
+   NEXT_PUBLIC_STRIPE_PRO_BUTTON_ID=buy_btn_pro_package_id
+   NEXT_PUBLIC_STRIPE_ULTRA_BUTTON_ID=buy_btn_ultra_package_id
+   ```
+4. Set up a Stripe webhook pointing to `/api/webhook/stripe` with the following events:
+   - `checkout.session.completed`
+   - `payment_intent.succeeded`
+5. Add the webhook secret to your `.env.local` file:
+   ```
+   STRIPE_WEBHOOK_SECRET=your-webhook-secret
+   ```
+
+## Database Migration
+
+To migrate from the subscription-based system to the credit-based system, run the SQL script in `schema_updates.sql`. This will:
+
+1. Create the new credit-related tables
+2. Set up triggers and policies
+3. Create credits for existing users
+4. Remove the legacy subscription tables

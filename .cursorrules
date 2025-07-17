@@ -1,0 +1,60 @@
+# Project Intelligence for Next.js + Stripe + Supabase SaaS Application
+
+## Project Patterns
+
+### Directory Structure
+- `app/`: Next.js App Router pages and layouts
+- `components/`: Reusable UI components
+- `contexts/`: React Context providers
+- `hooks/`: Custom React hooks
+- `public/`: Static assets
+- `types/`: TypeScript type definitions
+- `utils/`: Utility functions
+- `config/`: Configuration files
+- `memory-bank/`: Project documentation
+
+### Coding Patterns
+- Use TypeScript for all new files
+- Organize components with index.ts barrel files
+- Use named exports rather than default exports
+- Follow the existing component structure and naming conventions
+- Implement proper TypeScript interfaces for all props and data structures
+- Use React Hooks for state management and side effects
+- Leverage Tailwind CSS for styling with consistent class ordering
+
+### API Patterns
+- Use Next.js API routes for backend functionality
+- Implement proper error handling and status codes
+- Validate input data thoroughly
+- Use Supabase client for database operations
+- Follow RESTful principles for API design
+
+### Authentication Patterns
+- Use Supabase Auth for all authentication flows
+- Implement proper session management
+- Protect routes that require authentication
+- Handle auth state changes properly
+- Respect Row Level Security policies
+
+### UI/UX Patterns
+- Support both light and dark mode
+- Ensure responsive design for all screen sizes
+- Follow accessibility best practices
+- Use consistent component naming and structure
+- Implement loading states for asynchronous operations
+- Use Framer Motion for animations
+
+### Testing Patterns
+- Write unit tests for critical functionality
+- Use React Testing Library for component tests
+- Mock external services appropriately
+- Test edge cases and error scenarios
+
+## Project Preferences
+- Functional components over class components
+- TypeScript interfaces over types when appropriate
+- Custom hooks for reusable logic
+- Context API for global state management
+- Tailwind CSS for styling
+- Server components where appropriate
+- Client components when interactivity is needed 

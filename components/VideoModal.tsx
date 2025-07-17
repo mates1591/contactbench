@@ -4,10 +4,11 @@ import { X } from 'lucide-react';
 interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  videoId: string;
+  videoSrc: string;
+  title?: string;
 }
 
-export function VideoModal({ isOpen, onClose, videoId }: VideoModalProps) {
+export function VideoModal({ isOpen, onClose, videoSrc, title }: VideoModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -28,7 +29,7 @@ export function VideoModal({ isOpen, onClose, videoId }: VideoModalProps) {
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="relative bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-4xl w-full">
+            <div className="relative bg-neutral-dark rounded-xl shadow-xl max-w-4xl w-full border border-gray-800">
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -37,11 +38,18 @@ export function VideoModal({ isOpen, onClose, videoId }: VideoModalProps) {
                 <X className="w-6 h-6" />
               </button>
               
+              {/* Title if provided */}
+              {title && (
+                <div className="px-4 py-3 border-b border-gray-800">
+                  <h3 className="gradient-text text-xl">{title}</h3>
+                </div>
+              )}
+              
               {/* Video container with 16:9 aspect ratio */}
               <div className="relative pt-[56.25%]">
                 <iframe
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                  className="absolute inset-0 w-full h-full rounded-xl"
+                  src={videoSrc}
+                  className="absolute inset-0 w-full h-full rounded-b-xl"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />

@@ -47,31 +47,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
+      // Check for contact credits first (new system)
+      const { data: creditsData, error: creditsError } = await supabase
+        .from('user_contact_credits')
         .select('*')
         .eq('user_id', userId)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
         .maybeSingle();
       
-      if (error) {
-        console.error('Subscription check error:', error);
-        setIsSubscriber(false);
+      if (creditsData && creditsData.credits_available > 0) {
+        // If user has credits, consider them a subscriber in the new system
+        setIsSubscriber(true);
         return;
       }
+      
+      // Fall back to subscription check for backward compatibility
+      // This will gracefully handle missing tables during migration
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', userId)
+          .in('status', ['active', 'trialing'])
+          .order('created_at', { ascending: false })
+          .maybeSingle();
+        
+        if (error) {
+          // Handle gracefully - table might be gone after migration
+          console.log('Subscription table may no longer exist (system migrated to credits)');
+          setIsSubscriber(false);
+          return;
+        }
 
-      // console.log("AuthContext - subscription data: ", data)
-
-      const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
-        new Date(data.current_period_end) > new Date();
-      // console.log("AuthContext -  isValid: ", data)
-
-      setIsSubscriber(!!isValid);
-      console.log("AuthContext -  set isSubscriber: ", isSubscriber)
+        const isValid = data && 
+          ['active', 'trialing'].includes(data.status) && 
+          new Date(data.current_period_end) > new Date();
+        
+        setIsSubscriber(!!isValid);
+      } catch (e) {
+        // Silently handle subscription errors after migration
+        console.log('Using credits-based access system');
+        setIsSubscriber(false);
+      }
     } catch (error) {
-      console.error('Subscription check error:', error);
+      console.log('Access check fallback to credits system');
       setIsSubscriber(false);
     }
   }, []);

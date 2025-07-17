@@ -3,35 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --background: #F8F9FA;
-  --foreground: #2F3E46;
+  --background: #151515;
+  --foreground: #ffffff;
+  --border-color: #333333;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1A1B26;
-    --foreground: #F8F9FA;
-  }
+/* Mobile device target for removing tap highlight color - MODIFIED TO ALLOW TEXT SELECTION */
+button,
+a,
+select {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Allow text selection in non-interactive elements */
+p, h1, h2, h3, h4, h5, h6, span, blockquote, li {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Override browser default behavior - ONLY FOR INTERACTIVE ELEMENTS */
+button, a {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Add some cooking-themed utility classes */
+@layer base {
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Modified to target only interactive elements */
+  button, a {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+}
+
 @layer components {
-  .recipe-card {
-    @apply bg-white dark:bg-neutral-dark rounded-lg shadow-sm border border-primary/10 dark:border-primary/20 transition-all duration-300 hover:shadow-md;
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-primary font-bold;
   }
   
-  .cooking-button {
-    @apply bg-primary hover:bg-primary-dark text-white rounded-lg transition-all duration-300 transform hover:scale-102 active:scale-98;
+  .gradient-button {
+    @apply bg-gradient-primary text-white rounded-full transition-all duration-300 hover:shadow-lg hover:opacity-90;
   }
   
-  .accent-button {
-    @apply bg-secondary hover:bg-secondary-dark text-white rounded-lg transition-all duration-300;
+  .contactbench-card {
+    @apply bg-neutral-dark rounded-lg border border-gray-800 shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .navbar-item {
+    @apply text-white hover:text-primary-light transition-colors duration-300;
+  }
+  
+  .secondary-text {
+    @apply text-text-light;
   }
 }
 
@@ -43,4 +83,107 @@ body {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Remove outlines and focus styles only for interactive elements */
+button:focus, a:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button, a {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Fix for blue lines and borders - Modified to target only interactive elements */
+button, a {
+  outline-color: transparent !important;
+  outline-width: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-highlight: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+hr, .divider {
+  @apply border-gray-800;
+}
+
+.ring-1, .ring-2 {
+  @apply ring-gray-800;
+}
+
+/* Force custom outline only for accessibility */
+.feature-card:focus-visible, 
+.testimonial-card:focus-visible, 
+.pricing-card:focus-visible, 
+button:focus-visible, 
+a:focus-visible {
+  outline: 2px solid #333333 !important;
+  outline-offset: 2px !important;
+}
+
+/* Pricing card hover effect with gradient border */
+.pricing-card:hover {
+  position: relative !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 20px rgba(255, 138, 0, 0.1) !important;
+}
+
+.pricing-card:hover::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: 1rem !important; /* 2xl rounded corners */
+  padding: 2px !important;
+  background: linear-gradient(45deg, #FF8A00, #e53e3e) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* Stripe button styling */
+.stripe-gradient-button iframe,
+.stripe-neutral-button iframe {
+  border-radius: 9999px !important; /* rounded-full */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease-in-out !important;
+  height: 42px !important;
+  margin-top: 8px !important;
+}
+
+.stripe-gradient-button iframe {
+  background: linear-gradient(to right, #FF8A00, #e53e3e) !important;
+  border: none !important;
+}
+
+.stripe-gradient-button iframe:hover {
+  opacity: 0.9 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.stripe-neutral-button iframe {
+  background-color: #222222 !important; /* bg-neutral */
+  border: 1px solid #4B5563 !important; /* border-gray-700 */
+}
+
+.stripe-neutral-button iframe:hover {
+  background-color: #171717 !important; /* bg-neutral-darker */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Allow text selection */
+::selection {
+  background-color: rgba(255, 165, 0, 0.3); /* Orange with transparency */
+  color: white;
+}
+
+::-moz-selection {
+  background-color: rgba(255, 165, 0, 0.3); /* Orange with transparency */
+  color: white;
 }

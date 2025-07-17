@@ -10,14 +10,25 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectPath, setRedirectPath] = useState('/dashboard');
+
+  useEffect(() => {
+    // Check for redirect parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+      // Store the redirect path to use after login
+      setRedirectPath(`/${redirect}`);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
-      router.replace('/dashboard');
+      router.replace(redirectPath);
     } else {
       setIsLoading(false);
     }
-  }, [user, router]);
+  }, [user, router, redirectPath]);
 
   const handleSubmit = async (email: string, password: string, isSignUp: boolean) => {
     setError('');
@@ -34,10 +45,10 @@ export default function LoginPage() {
           return;
         }
         
-        router.replace('/dashboard');
+        router.replace(redirectPath);
       } else {
         await signInWithEmail(email, password);
-        router.replace('/dashboard');
+        router.replace(redirectPath);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Authentication failed');
@@ -48,14 +59,14 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-neutral">
+        <div className="text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex mt-20 justify-center bg-background px-4">
+    <div className="min-h-screen flex mt-20 justify-center bg-neutral px-4">
       <div className="w-full max-w-md">
         {/* <h1 className="text-4xl font-bold text-center mb-8 text-primary dark:text-white">
           NextTemp

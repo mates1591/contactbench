@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #151515;
+  --foreground: #ffffff;
+  --border-color: #333333;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+@layer base {
+  .dark {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-primary font-bold;
+  }
+  
+  .gradient-button {
+    @apply bg-gradient-primary text-white rounded-full transition-all duration-300 hover:shadow-lg hover:opacity-90;
+  }
+  
+  .contactbench-card {
+    @apply bg-neutral-dark rounded-lg border border-gray-800 shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .navbar-item {
+    @apply text-white hover:text-primary-light transition-colors duration-300;
+  }
+  
+  .secondary-text {
+    @apply text-text-light;
+  }
+}
+
+/* Hide scrollbar styles */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+} 

@@ -43,32 +43,44 @@ export function useSubscription() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+      // Try to get subscription data (this may fail if table no longer exists)
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing'])
+          .order('created_at', { ascending: false })
+          .maybeSingle();
 
-      if (error) throw error;
+        if (error) {
+          // Gracefully handle missing table after migration
+          console.log('Subscription system has been migrated to credits');
+          setSubscription(null);
+          setLoading(false);
+          return;
+        }
 
-      const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
-        new Date(data.current_period_end) > new Date();
+        const isValid = data && 
+          ['active', 'trialing'].includes(data.status) && 
+          new Date(data.current_period_end) > new Date();
 
-      const result = isValid ? data : null;
-      
-      // Update cache
-      subscriptionCache.set(user.id, {
-        data: result,
-        timestamp: now
-      });
-      
-      setSubscription(result);
+        const result = isValid ? data : null;
+        
+        // Update cache
+        subscriptionCache.set(user.id, {
+          data: result,
+          timestamp: now
+        });
+        
+        setSubscription(result);
+      } catch (tableError) {
+        // If the table query fails, check for credits as fallback
+        console.log('Subscription system has been migrated to credits');
+        setSubscription(null);
+      }
     } catch (err) {
-      console.error('Subscription fetch error:', err);
-      setError('Failed to load subscription');
+      console.log('Using credits-based system instead of subscriptions');
       setSubscription(null);
     } finally {
       setLoading(false);
@@ -97,6 +109,18 @@ export function useSubscription() {
       }
 
       try {
+        // Check if we should still use subscriptions or have migrated to credits
+        const { count } = await supabase
+          .from('user_contact_credits')
+          .select('*', { count: 'exact', head: true });
+        
+        // If we have credits table with records, we've migrated to the new system
+        if (count && count > 0) {
+          console.log('System migrated to credits, skipping subscription sync');
+          return;
+        }
+
+        // Otherwise, proceed with subscription sync
         const response = await fetch('/api/stripe/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -104,6 +128,12 @@ export function useSubscription() {
         });
         
         if (!response.ok) {
+          // Check if API returns that we've migrated systems
+          if (response.status === 404) {
+            console.log('Subscription API no longer available (migrated to credits)');
+            return;
+          }
+          
           const errorData = await response.json();
           throw new Error(errorData.details || 'Failed to sync with Stripe');
         }
@@ -111,12 +141,15 @@ export function useSubscription() {
         await fetchSubscription();
         setSyncRetries(0); // Reset retries on success
       } catch (error) {
-        console.error('Error syncing with Stripe:', error);
-        setError(error instanceof Error ? error.message : 'Failed to sync with Stripe');
+        if (error instanceof Error && error.message.includes('relation "subscriptions" does not exist')) {
+          console.log('Subscription table no longer exists (migrated to credits)');
+          return;
+        }
+        console.log('Stripe sync skipped (system likely migrated to credits)');
         setSyncRetries(prev => prev + 1);
       }
     }, 30000), // 30 second delay between calls
-    [fetchSubscription, syncRetries]
+    [fetchSubscription, syncRetries, supabase]
   );
 
   const syncWithStripe = useCallback((subscriptionId: string) => {
@@ -126,29 +159,44 @@ export function useSubscription() {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('subscription_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`
-        },
-        async (payload) => {
-          const isValid = checkValidSubscription([payload.new as Subscription]);
-          setSubscription(isValid ? payload.new as Subscription : null);
-          if (!isValid) {
-            console.log('Subscription expired or invalidated');
+    // Try to set up subscription listener, but handle missing table gracefully
+    try {
+      const channel = supabase
+        .channel('subscription_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'subscriptions',
+            filter: `user_id=eq.${user.id}`
+          },
+          async (payload) => {
+            try {
+              const isValid = checkValidSubscription([payload.new as Subscription]);
+              setSubscription(isValid ? payload.new as Subscription : null);
+              if (!isValid) {
+                console.log('Subscription expired or invalidated');
+              }
+            } catch (e) {
+              console.log('Error handling subscription update (system may be migrated)');
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status) => {
+          // If channel connection fails, likely table no longer exists
+          if (status === 'CHANNEL_ERROR') {
+            console.log('Subscription system has been migrated to credits');
+          }
+        });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (e) {
+      console.log('Could not set up subscription listener (system migrated to credits)');
+      return () => {};
+    }
   }, [user, supabase, checkValidSubscription]);
 
   useEffect(() => {

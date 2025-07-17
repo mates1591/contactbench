@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/utils/supabase';
+import { useContactCredits } from './useContactCredits';
 
 export function useTrialStatus() {
   const { user } = useAuth();
@@ -9,80 +10,37 @@ export function useTrialStatus() {
     isInTrial: boolean;
     trialEndTime: string | null;
   }>({ isInTrial: false, trialEndTime: null });
+  const { creditsAvailable, isLoading: isCreditsLoading } = useContactCredits();
 
   useEffect(() => {
-    async function checkTrialStatus() {
+    async function checkAccessStatus() {
       if (!user?.id) {
         setIsLoading(false);
         return;
       }
 
       try {
-        // First check if user has an active subscription
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        // If user has an active subscription, skip trial creation
-        if (subscription?.status === 'active' || subscription?.status === 'trialing') {
-          setTrialStatus({
-            isInTrial: false,
-            trialEndTime: null
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // Check if user has an existing trial
-        const { data: trial, error: trialError } = await supabase
-          .from('user_trials')
-          .select('trial_end_time, is_trial_used')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (trialError && trialError.code !== 'PGRST116') { // PGRST116 is "not found" error
-          throw trialError;
-        }
-
-        if (trial) {
-          // Check if trial is still valid
-          const now = new Date();
-          const endTime = new Date(trial.trial_end_time);
-          const isInTrial = !trial.is_trial_used && now < endTime;
-
-          setTrialStatus({
-            isInTrial,
-            trialEndTime: trial.trial_end_time
-          });
-        } else {
-          // Create new trial for user
-          const trialEndTime = new Date();
-          trialEndTime.setHours(trialEndTime.getHours() + 48);
-
-          const { data: newTrial, error: insertError } = await supabase
-            .from('user_trials')
-            .upsert({ // Use upsert instead of insert to handle duplicates
-              user_id: user.id,
-              trial_end_time: trialEndTime.toISOString(),
-              is_trial_used: false
-            })
-            .select('trial_end_time')
-            .single();
-
-          if (insertError) throw insertError;
-
-          setTrialStatus({
-            isInTrial: true,
-            trialEndTime: newTrial.trial_end_time
-          });
-        }
-      } catch (error) {
-        console.error('Error checking trial status:', error);
-        // Set default state on error
+        // Always give access to dashboard regardless of credits - 
+        // just update the trial status to reflect if they have credits
         setTrialStatus({
-          isInTrial: false,
+          isInTrial: true, // Always allow access now
+          trialEndTime: null
+        });
+        
+        // For backward compatibility, set a future date as trial end time
+        // This helps with UI displays that might expect this value
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+        
+        setTrialStatus({
+          isInTrial: true, // Always allow access to dashboard
+          trialEndTime: futureDate.toISOString()
+        });
+      } catch (error) {
+        console.error('Error checking access status:', error);
+        // Set default state on error - still allow access
+        setTrialStatus({
+          isInTrial: true, // Default to allowing access on error
           trialEndTime: null
         });
       } finally {
@@ -90,8 +48,10 @@ export function useTrialStatus() {
       }
     }
 
-    checkTrialStatus();
-  }, [user?.id]);
+    if (!isCreditsLoading) {
+      checkAccessStatus();
+    }
+  }, [user?.id, creditsAvailable, isCreditsLoading]);
 
-  return { ...trialStatus, isLoading };
+  return { ...trialStatus, isLoading: isLoading || isCreditsLoading };
 }

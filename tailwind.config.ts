@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: 'media',
+  darkMode: ['class', '[data-mode="dark"]'],
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,9 +11,9 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#A78BFA', // Violet-400: Soft lavender
-          light: '#C4B5FD',   // Violet-300: Light lavender
-          dark: '#8B5CF6',    // Violet-500: Medium lavender
+          DEFAULT: '#ff8c00', // Dark orange
+          light: '#ffd700',   // Gold
+          dark: '#e67e00',    // Slightly darker orange for hover
         },
         danger: {
           DEFAULT: '#DC2626', // Red-600: Clear red
@@ -21,30 +21,67 @@ export default {
           dark: '#B91C1C',    // Red-700: Deep red
         },
         neutral: {
-          DEFAULT: '#F8FAFC', // Slate-50: Crisp light
-          dark: '#1E293B',    // Slate-800: Rich dark
-          darker: '#0F172A',  // Slate-900: Deep dark
+          DEFAULT: '#222222', // Gray background (was #151515)
+          dark: '#1a1a1a',    // Darker gray (was #111111)
+          darker: '#111111',  // Even darker gray (was #080808)
         },
         text: {
-          DEFAULT: '#0F172A', // Slate-900: Sharp text
-          light: '#64748B',   // Slate-500: Soft text
-          dark: '#F8FAFC',    // Slate-50: Light text
+          DEFAULT: '#ffffff', // White text
+          light: '#858585',   // Gray text for secondary content
+          dark: '#ffffff',    // White text for dark mode
         },
         surface: {
-          light: '#FFFFFF',   // Pure white
-          dark: '#1E293B',    // Slate-800: Rich surface
+          light: '#151515',   // Dark surface for consistency
+          dark: '#151515',    // Same dark background for dark mode
         },
         accent: {
-          DEFAULT: '#38BDF8', // Sky-400: Fresh blue
-          light: '#7DD3FC',   // Sky-300: Soft blue
-          dark: '#0EA5E9',    // Sky-500: Deep blue
+          DEFAULT: '#ffd700', // Gold
+          light: '#ffe24d',   // Lighter gold
+          dark: '#e6c200',    // Darker gold
         }
       },
       boxShadow: {
-        'subtle': '0 1px 3px rgba(0,0,0,0.05)',
-        'hover': '0 4px 6px -1px rgba(139, 92, 246, 0.1), 0 2px 4px -1px rgba(139, 92, 246, 0.06)', // Softer violet shadow
-      }
+        'subtle': '0 1px 3px rgba(0,0,0,0.2)',
+        'hover': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15)', // Darkened shadow
+      },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(to right, #ff8c00, #ffd700)',
+      },
+      borderColor: {
+        DEFAULT: '#1e1e1e', // Default border color
+      },
+      outline: {
+        'none': ['0 solid transparent']
+      },
+      ringColor: {
+        DEFAULT: '#333333',
+      },
+      ringWidth: {
+        DEFAULT: '0',
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addBase }: { addBase: Function }) {
+      addBase({
+        '*': { 
+          '-webkit-tap-highlight-color': 'rgba(0, 0, 0, 0)', 
+          'outline': 'none'
+        },
+        '*:focus': { 
+          'outline': 'none !important',
+        },
+        '*:active': { 
+          'outline': 'none !important',
+        },
+        'body': {
+          '-webkit-tap-highlight-color': 'transparent',
+        },
+        'a, button, input, textarea, select': {
+          '-webkit-tap-highlight-color': 'transparent',
+          'outline': 'none !important',
+        },
+      });
+    },
+  ],
 } satisfies Config;
